@@ -1,0 +1,85 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { HydratedDocument } from 'mongoose';
+import * as mongoosePaginate from 'mongoose-paginate-v2';
+import { UserBy } from 'shared-sdk';
+
+export enum NoteModule {
+  contacts = 'contacts',
+  boards = 'boards',
+}
+
+@Schema({ timestamps: true, collection: 'comments' })
+export class CommentsEntity {
+  _id: string;
+
+  @Prop({ required: true, type: String })
+  @ApiProperty({ type: String })
+  tenant: string;
+
+  @Prop({ enum: NoteModule, default: NoteModule.contacts })
+  @ApiProperty({ enum: NoteModule, default: NoteModule.contacts })
+  module: NoteModule;
+
+  @Prop({ required: true, type: String })
+  @ApiProperty({ type: String })
+  referenceId: string;
+
+  @Prop({ required: true, type: String })
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  @IsString()
+  text: string;
+
+  @ApiPropertyOptional({ type: Number, default: 0 })
+  @Prop({ type: Number, default: 0 })
+  likes: number;
+
+  @Prop({ type: [String], default: [] })
+  mentions?: string[];
+
+  @Prop({ type: Object })
+  @ApiProperty({ type: UserBy })
+  createdBy?: UserBy;
+
+  @Prop({ type: Date })
+  @ApiProperty({ type: String })
+  createdAt: Date;
+}
+
+export type CommentDocument = HydratedDocument<CommentsEntity>;
+
+export const CommentSchema = SchemaFactory.createForClass(CommentsEntity)
+  .plugin(mongoosePaginate)
+  .index({ tenant: 1, uuid: 1 })
+  .index({ text: 'text' });
+
+************************************************+++++++++++++++++++++++++++++++++++++++++++
+CREATE:TS
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+export class CreateCommentDto {
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  @IsString()
+  module: string;
+
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  @IsString()
+  text: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsOptional()
+  mentions?: string[];
+
+  referenceId: string;
+  /**
+   * set by middleware
+   */
+  tenant: string;
+  createdBy: any;
+}
